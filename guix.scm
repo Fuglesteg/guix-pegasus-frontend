@@ -1,9 +1,10 @@
 (use-modules (guix packages)
+             (guix gexp)
              (guix git-download)
              (guix build-system qt)
              ((guix licenses) #:prefix license:)
              (gnu packages qt)
-             (gnu packages cmake)
+             (gnu packages gstreamer)
              (gnu packages sdl))
 
  (let ((commit "cc2497abf7ebb12e0cbdb57a16addaf62d6f50bd")
@@ -21,12 +22,23 @@
       (sha256 (base32 "01p1nyqh7rqhap0qsc1b3y8kfqgpzia60cvdg6p927sv42mzmpw9"))
       (file-name (git-file-name name version))))
     (build-system qt-build-system)
-    (arguments (list #:qtbase qtbase-5 #:tests? #f))
+    (arguments
+     (list #:qtbase qtbase-5
+           #:tests? #f
+           #:phases
+           #~(modify-phases %standard-phases
+                  (add-after 'qt-wrap 'gst-wrap
+                       (lambda _
+                           (wrap-program (string-append #$output "/bin/pegasus-fe")
+                                `("GST_PLUGIN_SYSTEM_PATH" suffix
+                                  (,(string-append #$gst-plugins-good "/lib/gstreamer-1.0")))))))))
     (inputs (list sdl2
+                  qtbase-5
                   qtsvg-5
-                  qttools-5
                   qtdeclarative-5
                   qtgraphicaleffects
-                  qtmultimedia-5))
+                  qtmultimedia-5
+                  qtgamepad
+                  gst-plugins-good))
+    (native-inputs (list qttools-5))
     (synopsis "") (description "") (license license:expat) (home-page "")))
-
